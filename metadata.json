@@ -1,0 +1,8 @@
+{
+  "name": "SafeStack",
+  "description": "Medication interaction and scheduling app for seniors and caregivers.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": []
+}

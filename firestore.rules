@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.user_id;
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasOnly(['uid', 'display_name', 'plan', 'font_size_preference', 'created_at']) &&
+             data.uid is string &&
+             (!('display_name' in data) || data.display_name is string) &&
+             data.plan in ['free', 'pro', 'caregiver'] &&
+             data.font_size_preference in ['normal', 'large', 'xlarge'] &&
+             data.created_at is string;
+    }
+
+    function isValidStack(data) {
+      return data.keys().hasOnly(['id', 'user_id', 'name', 'person_label', 'color', 'created_at', 'updated_at']) &&
+             data.id is string &&
+             data.user_id is string &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             (!('person_label' in data) || (data.person_label is string && data.person_label.size() < 100)) &&
+             data.color is string && data.color.size() < 20 &&
+             data.created_at is string &&
+             (!('updated_at' in data) || data.updated_at is string);
+    }
+
+    function isValidStackItem(data) {
+      return data.keys().hasOnly(['id', 'stack_id', 'user_id', 'drug_name', 'brand_name', 'rxnorm_id', 'dosage', 'frequency', 'item_type', 'notes', 'created_at']) &&
+             data.id is string &&
+             data.stack_id is string &&
+             data.user_id is string &&
+             data.drug_name is string && data.drug_name.size() > 0 && data.drug_name.size() < 200 &&
+             (!('brand_name' in data) || (data.brand_name is string && data.brand_name.size() < 200)) &&
+             (!('rxnorm_id' in data) || (data.rxnorm_id is string && data.rxnorm_id.size() < 100)) &&
+             (!('dosage' in data) || (data.dosage is string && data.dosage.size() < 100)) &&
+             (!('frequency' in data) || (data.frequency is string && data.frequency.size() < 100)) &&
+             data.item_type in ['prescription', 'otc', 'supplement', 'vitamin'] &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() < 1000)) &&
+             data.created_at is string;
+    }
+
+    function isValidInteractionResult(data) {
+      return data.keys().hasOnly(['id', 'stack_id', 'user_id', 'drug_a', 'drug_b', 'severity', 'mechanism', 'plain_explanation', 'symptoms_to_watch', 'timing_advice', 'food_interaction', 'data_source', 'analyzed_at']) &&
+             data.id is string &&
+             data.stack_id is string &&
+             data.user_id is string &&
+             data.drug_a is string && data.drug_a.size() < 200 &&
+             data.drug_b is string && data.drug_b.size() < 200 &&
+             data.severity in ['none', 'minor', 'moderate', 'major', 'contraindicated'] &&
+             (!('mechanism' in data) || (data.mechanism is string && data.mechanism.size() < 2000)) &&
+             (!('plain_explanation' in data) || (data.plain_explanation is string && data.plain_explanation.size() < 2000)) &&
+             (!('symptoms_to_watch' in data) || (data.symptoms_to_watch is string && data.symptoms_to_watch.size() < 1000)) &&
+             (!('timing_advice' in data) || (data.timing_advice is string && data.timing_advice.size() < 1000)) &&
+             (!('food_interaction' in data) || (data.food_interaction is string && data.food_interaction.size() < 1000)) &&
+             data.data_source in ['openfda', 'rxnorm', 'ai_synthesized'] &&
+             data.analyzed_at is string;
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.uid == userId;
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.uid == userId && request.resource.data.plan == resource.data.plan;
+    }
+
+    match /stacks/{stackId} {
+      allow read: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+      allow create: if isAuthenticated() && isValidStack(request.resource.data) && request.resource.data.user_id == request.auth.uid;
+      allow update: if isAuthenticated() && isDocOwner() && isValidStack(request.resource.data) && request.resource.data.user_id == request.auth.uid;
+      allow delete: if isAuthenticated() && isDocOwner();
+    }
+
+    match /stack_items/{itemId} {
+      allow read: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+      allow create: if isAuthenticated() && isValidStackItem(request.resource.data) && request.resource.data.user_id == request.auth.uid;
+      allow update: if isAuthenticated() && isDocOwner() && isValidStackItem(request.resource.data) && request.resource.data.user_id == request.auth.uid;
+      allow delete: if isAuthenticated() && isDocOwner();
+    }
+
+    match /interaction_results/{resultId} {
+      allow read: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+      allow create: if isAuthenticated() && isValidInteractionResult(request.resource.data) && request.resource.data.user_id == request.auth.uid;
+      allow update: if isAuthenticated() && isDocOwner() && isValidInteractionResult(request.resource.data) && request.resource.data.user_id == request.auth.uid;
+      allow delete: if isAuthenticated() && isDocOwner();
+    }
+  }
+}

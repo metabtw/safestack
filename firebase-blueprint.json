@@ -1,0 +1,90 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the SafeStack application.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "User ID from Firebase Auth" },
+        "display_name": { "type": "string", "description": "User's display name" },
+        "plan": { "type": "string", "enum": ["free", "pro", "caregiver"], "description": "Subscription plan" },
+        "font_size_preference": { "type": "string", "enum": ["normal", "large", "xlarge"], "description": "User's preferred font size" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "plan", "font_size_preference"]
+    },
+    "Stack": {
+      "title": "Stack",
+      "description": "A collection of medications for a specific person.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "user_id": { "type": "string" },
+        "name": { "type": "string" },
+        "person_label": { "type": "string", "description": "e.g., Annem, Babam" },
+        "color": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "user_id", "name", "color", "created_at"]
+    },
+    "StackItem": {
+      "title": "StackItem",
+      "description": "A medication or supplement in a stack.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "stack_id": { "type": "string" },
+        "user_id": { "type": "string" },
+        "drug_name": { "type": "string" },
+        "brand_name": { "type": "string" },
+        "rxnorm_id": { "type": "string" },
+        "dosage": { "type": "string" },
+        "frequency": { "type": "string" },
+        "item_type": { "type": "string", "enum": ["prescription", "otc", "supplement", "vitamin"] },
+        "notes": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "stack_id", "user_id", "drug_name", "item_type", "created_at"]
+    },
+    "InteractionResult": {
+      "title": "InteractionResult",
+      "description": "Analysis result between two drugs in a stack.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "stack_id": { "type": "string" },
+        "user_id": { "type": "string" },
+        "drug_a": { "type": "string" },
+        "drug_b": { "type": "string" },
+        "severity": { "type": "string", "enum": ["none", "minor", "moderate", "major", "contraindicated"] },
+        "mechanism": { "type": "string" },
+        "plain_explanation": { "type": "string" },
+        "symptoms_to_watch": { "type": "string" },
+        "timing_advice": { "type": "string" },
+        "food_interaction": { "type": "string" },
+        "data_source": { "type": "string", "enum": ["openfda", "rxnorm", "ai_synthesized"] },
+        "analyzed_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "stack_id", "user_id", "drug_a", "drug_b", "severity", "data_source", "analyzed_at"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles"
+    },
+    "/stacks/{stackId}": {
+      "schema": { "$ref": "#/entities/Stack" },
+      "description": "Medication stacks"
+    },
+    "/stack_items/{itemId}": {
+      "schema": { "$ref": "#/entities/StackItem" },
+      "description": "Items within stacks"
+    },
+    "/interaction_results/{resultId}": {
+      "schema": { "$ref": "#/entities/InteractionResult" },
+      "description": "Interaction analysis results"
+    }
+  }
+}
