@@ -108,12 +108,14 @@ export function Scan() {
     <div className="relative h-full bg-black flex flex-col">
       {!image ? (
         <>
+          {/* @ts-ignore - react-webcam types are incomplete */}
           <Webcam
             audio={false}
             ref={webcamRef}
             screenshotFormat="image/jpeg"
             videoConstraints={{ facingMode: "environment" }}
             className="absolute inset-0 w-full h-full object-cover"
+            mirrored={false}
           />
           {/* Viewfinder overlay */}
           <div className="absolute inset-0 pointer-events-none flex items-center justify-center p-8">
